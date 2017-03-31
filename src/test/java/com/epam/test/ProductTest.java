@@ -113,12 +113,29 @@ public class ProductTest {
     public void changePriceInProductNegativeTestForFiveHundred() {
         createStep.createNewProductWithPut(product, baseUri, productPath);
         changeStep.changePrice("lol", baseUri, productPath).then().statusCode(500);
+        deleteStep.deleteProduct(product, baseUri, productPath);
+
     }
 
     @Test
-    public void changePriceInProductNegativeTestForFouHundredThree() {
+    public void changePriceInProductNegativeTestForFourHundredThree() {
         createStep.createNewProductWithPut(product, baseUri, productPath);
         changeStep.changePrice("®", baseUri, productPath).then().statusCode(403);
+        deleteStep.deleteProduct(product, baseUri, productPath);
+    }
+
+    @Test
+    public void negativeTestForDoubleCreatingForFiveHundred() {
+        createStep.createNewProductWithPut(product, baseUri, productPath);
+        createStep.createNewProductWithPut(product, baseUri, productPath).then().statusCode(500);
+        deleteStep.deleteProduct(product, baseUri, productPath);
+    }
+
+    @Test
+    public void negativeTestForDoubleDeletingForFourHundredFour() {
+        createStep.createNewProductWithPut(product, baseUri, productPath);
+        deleteStep.deleteProduct(product, baseUri, productPath);
+        deleteStep.deleteProduct(product, baseUri, productPath).then().statusCode(404);
     }
 
 
@@ -145,13 +162,14 @@ public class ProductTest {
     public void createNewProductWithPutTest(int id) {
         product.setId(id);
         productPath = "/" + product.getId();
+        deleteStep.deleteProduct(product, baseUri, productPath);
         createStep.createNewProductWithPut(product, baseUri, productPath).then().
                 statusCode(201);
         deleteStep.deleteProduct(product, baseUri, productPath);
     }
 
 
-    //this test does not work and will be nice if somebody tell me why
+    //this test does not work and will be nice if somebody tell me why because using restGate it works
     @Ignore
     public void createProductWithPostTest() {
 
@@ -166,7 +184,7 @@ public class ProductTest {
     }
 
     // The element type "HR" must be terminated by the matching end-tag "</HR>".
-    //incorrect site mb
+    //Bad page-proofs maybe
     @Ignore
     public void negativeTestUsingDeleteForInvalidUri() {
         given().
