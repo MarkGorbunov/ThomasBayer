@@ -1,6 +1,5 @@
 package com.epam.step;
 
-import com.epam.bean.Product;
 import com.epam.util.XmlBuilder;
 import io.restassured.response.Response;
 

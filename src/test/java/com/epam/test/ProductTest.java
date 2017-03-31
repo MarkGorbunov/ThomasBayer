@@ -7,17 +7,19 @@ import com.epam.step.DeleteStep;
 import com.epam.step.GetProductStep;
 import com.epam.util.XmlBuilder;
 import io.restassured.RestAssured;
-import io.restassured.parsing.Parser;
+
 import io.restassured.response.Response;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.codehaus.groovy.*;
+
 
 import static io.restassured.RestAssured.*;
+import static io.restassured.config.XmlConfig.xmlConfig;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasXPath;
 
 
 /**
@@ -44,7 +46,7 @@ public class ProductTest {
 
     }
 
-    @DataProvider(name = "invalid id for 404")
+    @DataProvider(name = "invalid id")
     public Object[][] invalidDataForFourHundredFour() throws Exception {
         return new Object[][]{
                 {"/lol"},
@@ -54,7 +56,7 @@ public class ProductTest {
         };
     }
 
-    @DataProvider(name = "valid id for create products")
+    @DataProvider(name = "valid id")
     public Object[][] validDataForCreateProducts() throws Exception {
         return new Object[][]{
                 {999},
@@ -74,7 +76,6 @@ public class ProductTest {
     }
 
 
-
     @DataProvider(name = "valid name for change")
     public Object[][] validDataForChangeName() throws Exception {
         return new Object[][]{
@@ -92,17 +93,18 @@ public class ProductTest {
     }
 
 
-    @Test(dataProvider = "invalid id for 404")
-    public void negativeTestForInvalidUriWithFourHundredFour(String path) {
+    @Test(dataProvider = "invalid id")
+    public void negativeTestUsingGetForInvalidUriWithFourHundredFour(String path) {
         getProductStep.getProduct(baseUri, path).then().assertThat().statusCode(404);
     }
+
 
     @Test(dataProvider = "valid price for change")
     public void changePriceInProductPositiveTest(Product productWithPrice) {
         createStep.createNewProductWithPut(product, baseUri, productPath);
         changeStep.changePrice(Double.toString(productWithPrice.getPrice()), baseUri, productPath);
         getProductStep.getProduct(baseUri, productPath).then().
-                        body("PRODUCT.PRICE", equalTo(Double.toString(productWithPrice.getPrice())));
+                body("PRODUCT.PRICE", equalTo(Double.toString(productWithPrice.getPrice())));
 
 
     }
@@ -130,23 +132,26 @@ public class ProductTest {
 
     }
 
-    @Test
-    public void deleteProductTest() {
+    @Test(dataProvider = "valid id")
+    public void deleteProductTest(int id) {
+        product.setId(id);
+        productPath = "/" + product.getId();
         createStep.createNewProductWithPut(product, baseUri, productPath);
         deleteStep.deleteProduct(product, baseUri, productPath).then().body("resource.deleted.text()", equalTo(Integer.toString(product.getId())));
     }
 
 
-    @Test(dataProvider = "valid id for create products")
+    @Test(dataProvider = "valid id")
     public void createNewProductWithPutTest(int id) {
         product.setId(id);
+        productPath = "/" + product.getId();
         createStep.createNewProductWithPut(product, baseUri, productPath).then().
                 statusCode(201);
-        deleteStep.deleteProduct(product,baseUri,productPath);
+        deleteStep.deleteProduct(product, baseUri, productPath);
     }
 
 
-    //this test does not work
+    //this test does not work and will be nice if somebody tell me why
     @Ignore
     public void createProductWithPostTest() {
 
@@ -154,10 +159,22 @@ public class ProductTest {
         Response r = given().contentType("application/xml").
                 body(XmlBuilder.xmlBuilderForPostCreate(product)).
                 when().
-                post(baseUri + productPath);
+                post(baseUri);
 
         String body = r.getBody().asString();
         System.out.println(body);
+    }
+
+    // The element type "HR" must be terminated by the matching end-tag "</HR>".
+    //incorrect site mb
+    @Ignore
+    public void negativeTestUsingDeleteForInvalidUri() {
+        given().
+                config(RestAssured.config().xmlConfig(xmlConfig().with().namespaceAware(true))).
+                when().
+                get(baseUri + "lol").
+                then().
+                body(hasXPath("//u[contains(text() ,'delete')]"));
     }
 
     @AfterMethod
@@ -165,17 +182,4 @@ public class ProductTest {
         deleteStep.deleteProduct(product, baseUri, productPath);
     }
 
-
-
-
-
-
-
-    /*XmlBuilder.xmlBuilderForPost(200,"sword",5.5)
-    <lol>
-<id>50000</ID>
-<NAME>sword</NAME>
-<PRICE>5.5</PRICE>
-</lol>
-     */
 }
